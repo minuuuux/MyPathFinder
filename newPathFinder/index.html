@@ -144,9 +144,9 @@
         <button onclick="setMode('group-connect')">그룹 선 연결</button>
         <button onclick="removeGroupConnections()">그룹 선 해제</button>
         <button onclick="setMode('add')">그리드 추가</button>
+        <button onclick="setMode('single-add')">단독 그리드 추가</button>
         <button onclick="setMode('delete')">그리드 삭제</button>
         <button onclick="resetGrid()">초기화</button>
-        <!-- <button onclick="addGridItem()">그리드 아이템 추가</button>  -->
         <button onclick="findPath()" class="find-path-btn">경로 찾기</button>
         <button onclick="saveGridState()"  class="find-path-btn">저장하기</button>
         <button onclick="loadGridState()"  class="find-path-btn">불러오기</button>
@@ -275,10 +275,10 @@
 
             // 그리드 컨테이너 클릭 이벤트 수정
             gridContainer.addEventListener('click', function(e) {
-                if (currentMode === 'add') {
+                if (currentMode === 'add' || currentMode === 'single-add') {  // single-add 모드 추가
                     const rect = gridContainer.getBoundingClientRect();
                     const gridItemSize = 12; // width(10px) + border(2px)
-                    const x = e.clientX - rect.left - (gridItemSize / 2); // 그리드 아이템의 중앙이 클릭 위치에 오도록 조정
+                    const x = e.clientX - rect.left - (gridItemSize / 2);
                     const y = e.clientY - rect.top - (gridItemSize / 2);
                     addGridItem(x, y);
                 }
@@ -297,12 +297,11 @@
             cell.className = 'grid-item';
             cell.setAttribute('data-id', Date.now().toString());
             
-            // 쉬프트 키가 눌려 있고 이전 그리드가 있는 경우
-            if (event.shiftKey && lastAddedItem) {
+            // 쉬프트 키가 눌려 있고 이전 그리드가 있는 경우, 그리고 현재 모드가 'single-add'가 아닌 경우에만
+            if (event.shiftKey && lastAddedItem && currentMode !== 'single-add') {
                 const lastRect = lastAddedItem.getBoundingClientRect();
                 const containerRect = gridContainer.getBoundingClientRect();
                 
-                // 클릭한 위치와 이전 그리드의 위치를 비교하여 수직 또는 수평으로 배치
                 const mouseX = event.clientX - containerRect.left;
                 const mouseY = event.clientY - containerRect.top;
                 
@@ -310,27 +309,23 @@
                 const deltaY = Math.abs(mouseY - (lastRect.top - containerRect.top));
                 
                 if (deltaX > deltaY) {
-                    // 수평으로 배치
                     y = lastRect.top - containerRect.top;
                 } else {
-                    // 수직으로 배치
                     x = lastRect.left - containerRect.left;
                 }
             }
 
-            // 클릭한 위치에 그리드 아이템 배치
             cell.style.left = `${x}px`;
             cell.style.top = `${y}px`;
 
-            // 드래그 이벤트 설정
             cell.addEventListener('mousedown', dragStart);
             cell.addEventListener('touchstart', dragStart, { passive: false });
             cell.addEventListener('click', () => handleCellClick(cell));
 
             gridContainer.appendChild(cell);
 
-            // 이전에 추가된 아이템이 있다면 연결
-            if (lastAddedItem) {
+            // 'single-add' 모드가 아닐 때만 이전 아이템과 연결
+            if (currentMode !== 'single-add' && lastAddedItem) {
                 const connection = createConnectionKey(lastAddedItem, cell);
                 connections.add(connection);
             }
